@@ -2141,6 +2141,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         let selectedExercise = null;
         let professorConfig = {};
         let currentStudentLink = '';
+        let currentAlunoProf = {};
 
         // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
@@ -2254,10 +2255,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         // Compacta o treino para o link: guarda só id do exercício + prescrição
         // (nome, ícone, instruções são recuperados de exercisesDB ao abrir)
         function toCompactWorkout(workoutData) {
+            const config = professorConfig && professorConfig.phone
+                ? professorConfig
+                : (JSON.parse(localStorage.getItem('professorConfig') || '{}'));
             return {
                 student: workoutData.student,
                 date: workoutData.date,
                 created: workoutData.created,
+                prof: { name: config.name || '', phone: config.phone || '' },
                 ex: workoutData.exercises.map(ex => ({
                     id: ex.id,
                     sets: ex.sets,
@@ -2265,7 +2270,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
                     carga: ex.carga || '',
                     pausa: ex.pausa || '',
                     metodo: ex.metodo || '',
-                    obs: ex.observation || ''
+                    obs: ex.observation || '',
+                    youtube: ex.youtube || (localStorage.getItem(`yt_${ex.id}`) || '')
                 }))
             };
         }
@@ -2282,13 +2288,15 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
                     carga: c.carga,
                     pausa: c.pausa,
                     metodo: c.metodo,
-                    observation: c.obs
+                    observation: c.obs,
+                    youtube: c.youtube || base.youtube || ''
                 };
             }).filter(Boolean);
             return {
                 student: compact.student,
                 date: compact.date,
                 created: compact.created,
+                prof: compact.prof || {},
                 exercises: exercises
             };
         }
@@ -2482,7 +2490,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
             if (!data) { mostrarErroAluno(); return; }
 
-            const config = JSON.parse(localStorage.getItem('professorConfig')) || {};
+            const config = (data.prof && data.prof.phone) ? data.prof : (JSON.parse(localStorage.getItem('professorConfig') || '{}'));
+            currentAlunoProf = config;
 
             try {
                 document.body.innerHTML = `
@@ -2563,7 +2572,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         }
 
         function requestHelp(studentName, exerciseName) {
-            const config = JSON.parse(localStorage.getItem('professorConfig')) || {};
+            const config = (currentAlunoProf && currentAlunoProf.phone) ? currentAlunoProf : (JSON.parse(localStorage.getItem('professorConfig') || '{}'));
             
             if (!config.phone) {
                 alert('Professor não configurou número de contato. Por favor, procure-o pessoalmente.');
